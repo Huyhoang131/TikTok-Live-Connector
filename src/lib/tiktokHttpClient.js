@@ -2,89 +2,82 @@ const axios = require('axios');
 const TikTokCookieJar = require('./tiktokCookieJar');
 const { deserializeMessage } = require('./webcastProtobuf.js');
 const { signWebcastRequest } = require('./tiktokSignatureProvider');
-
 const Config = require('./webcastConfig.js');
 
 class TikTokHttpClient {
-    constructor(customHeaders, axiosOptions, signProviderOptions, sessionId) {
-        const { Cookie } = customHeaders || {};
+    constructor(customHeaders = {}, axiosOptions = {}, signProviderOptions = {}, sessionId) {
+        const { Cookie } = customHeaders;
 
-        if (Cookie) {
-            delete customHeaders['Cookie'];
-        }
+        if (Cookie) delete customHeaders['Cookie'];
 
         this.axiosInstance = axios.create({
             timeout: 10000,
-            headers: {
-                ...Config.DEFAULT_REQUEST_HEADERS,
-                ...customHeaders,
-            },
-            ...(axiosOptions || {}),
+            headers: Object.assign({}, Config.DEFAULT_REQUEST_HEADERS, customHeaders),
+            ...axiosOptions,
         });
 
         this.cookieJar = new TikTokCookieJar(this.axiosInstance);
 
         if (Cookie) {
-            Cookie.split('; ').forEach((v) => this.cookieJar.processSetCookieHeader(v));
+            Cookie.split('; ').forEach(this.cookieJar.processSetCookieHeader.bind(this.cookieJar));
         }
 
         this.signProviderOptions = signProviderOptions;
-
-        if (sessionId) {
-            this.setSessionId(sessionId);
-        }
-    }
-
-    #get(url, responseType) {
-        return this.axiosInstance.get(url, { responseType });
-    }
-
-    #post(url, params, data, responseType) {
-        return this.axiosInstance.post(url, data, { params, responseType });
+        if (sessionId) this.setSessionId(sessionId);
     }
 
     setSessionId(sessionId) {
-        this.cookieJar.setCookie('sessionid', sessionId);
-        this.cookieJar.setCookie('sessionid_ss', sessionId);
-        this.cookieJar.setCookie('sid_tt', sessionId);
+        ['sessionid', 'sessionid_ss', 'sid_tt'].forEach((key) => this.cookieJar.setCookie(key, sessionId));
     }
 
-    async #buildUrl(host, path, params, sign) {
+    async #buildSignedUrl(host, path, params, shouldSign) {
         let fullUrl = `${host}${path}?${new URLSearchParams(params || {})}`;
 
-        if (sign) {
-            fullUrl = await signWebcastRequest(fullUrl, this.axiosInstance.defaults.headers, this.cookieJar, this.signProviderOptions);
-        }
+        return shouldSign
+            ? await signWebcastRequest(fullUrl, this.axiosInstance.defaults.headers, this.cookieJar, this.signProviderOptions)
+            : fullUrl;
+    }
 
-        return fullUrl;
+    async #fetchGet(url, responseType = 'json') {
+        try {
+            const response = await this.axiosInstance.get(url, { responseType });
+            return response.data;
+        } catch (error) {
+            throw new Error(`GET Request Failed: ${error.message} | URL: ${url}`);
+        }
+    }
+
+    async #fetchPost(url, params, data, responseType = 'json') {
+        try {
+            const response = await this.axiosInstance.post(url, data, { params, responseType });
+            return response.data;
+        } catch (error) {
+            throw new Error(`POST Request Failed: ${error.message} | URL: ${url}`);
+        }
     }
 
     async getMainPage(path) {
-        let response = await this.#get(`${Config.TIKTOK_URL_WEB}${path}`);
-        return response.data;
+        return this.#fetchGet(`${Config.TIKTOK_URL_WEB}${path}`);
     }
 
     async getDeserializedObjectFromWebcastApi(path, params, schemaName, shouldSign) {
-        let url = await this.#buildUrl(Config.TIKTOK_URL_WEBCAST, path, params, shouldSign);
-        let response = await this.#get(url, 'arraybuffer');
-        return deserializeMessage(schemaName, response.data);
+        const url = await this.#buildSignedUrl(Config.TIKTOK_URL_WEBCAST, path, params, shouldSign);
+        const bufferData = await this.#fetchGet(url, 'arraybuffer');
+        return deserializeMessage(schemaName, bufferData);
     }
 
     async getJsonObjectFromWebcastApi(path, params, shouldSign) {
-        let url = await this.#buildUrl(Config.TIKTOK_URL_WEBCAST, path, params, shouldSign);
-        let response = await this.#get(url, 'json');
-        return response.data;
+        const url = await this.#buildSignedUrl(Config.TIKTOK_URL_WEBCAST, path, params, shouldSign);
+        return this.#fetchGet(url);
     }
 
     async postFormDataToWebcastApi(path, params, formData) {
-        let response = await this.#post(`${Config.TIKTOK_URL_WEBCAST}${path}`, params, formData, 'json');
-        return response.data;
+        return this.#fetchPost(`${Config.TIKTOK_URL_WEBCAST}${path}`, params, formData);
     }
 
     async getJsonObjectFromTiktokApi(path, params, shouldSign) {
-        let url = await this.#buildUrl(Config.TIKTOK_URL_WEB, path, params, shouldSign);
-        let response = await this.#get(url, 'json');
-        return response.data;
+        const url = await this.#buildSignedUrl(Config.TIKTOK_URL_WEB, path, params, shouldSign);
+        return this.#fetchGet(url);
     }
 }
 

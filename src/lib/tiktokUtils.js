@@ -1,50 +1,46 @@
 const { UserOfflineError, InvalidUniqueIdError } = require('./tiktokErrors');
+
 let uu = [];
+const EXPIRATION_TIME = 10 * 60 * 1000; // 10 minutes
 
 function getRoomIdFromMainPageHtml(mainPageHtml) {
     let idx = 0;
     do {
-        // loop thru many "room" excerpts and look for a match
         idx = mainPageHtml.indexOf('roomId', idx + 3);
-        const excerpt = mainPageHtml.substr(idx, 50);
-        let matchExcerpt = excerpt.match(/roomId":"([0-9]+)"/);
-        if (matchExcerpt && matchExcerpt[1]) return matchExcerpt[1];
-    } while (idx >= 0);
+        if (idx === -1) break;
 
-    let matchMeta = mainPageHtml.match(/room_id=([0-9]*)/);
-    if (matchMeta && matchMeta[1]) return matchMeta[1];
+        const excerpt = mainPageHtml.slice(idx, idx + 50);
+        const matchExcerpt = excerpt.match(/roomId":"(\d+)"/);
+        if (matchExcerpt) return matchExcerpt[1];
+    } while (true);
 
-    let matchJson = mainPageHtml.match(/"roomId":"([0-9]*)"/);
-    if (matchJson && matchJson[1]) return matchJson[1];
+    const matchMeta = mainPageHtml.match(/room_id=(\d+)/) || mainPageHtml.match(/"roomId":"(\d+)"/);
+    if (matchMeta) return matchMeta[1];
 
-    let validResponse = mainPageHtml.includes('"og:url"');
-
+    const validResponse = mainPageHtml.includes('"og:url"');
     throw new UserOfflineError(validResponse ? 'User might be offline.' : 'Your IP or country might be blocked by TikTok.');
 }
 
 function validateAndNormalizeUniqueId(uniqueId) {
-    if (typeof uniqueId !== 'string') {
+    if (typeof uniqueId !== 'string' || !uniqueId.trim()) {
         throw new InvalidUniqueIdError("Missing or invalid value for 'uniqueId'. Please provide the username from TikTok URL.");
     }
 
-    // Support full URI
-    uniqueId = uniqueId.replace('https://www.tiktok.com/', '');
-    uniqueId = uniqueId.replace('/live', '');
-    uniqueId = uniqueId.replace('@', '');
-    uniqueId = uniqueId.trim();
-
-    return uniqueId;
+    return uniqueId
+        .replace(/^https:\/\/www\.tiktok\.com\//, '')
+        .replace(/\/live$/, '')
+        .replace(/^@/, '')
+        .trim();
 }
 
 function addUniqueId(uniqueId) {
     const existingEntry = uu.find((x) => x.uniqueId === uniqueId);
+    const timestamp = Date.now();
+
     if (existingEntry) {
-        existingEntry.ts = new Date().getTime();
+        existingEntry.ts = timestamp;
     } else {
-        uu.push({
-            uniqueId,
-            ts: new Date().getTime(),
-        });
+        uu.push({ uniqueId, ts: timestamp });
     }
 }
 
@@ -53,7 +49,8 @@ function removeUniqueId(uniqueId) {
 }
 
 function getUuc() {
-    return uu.filter((x) => x.ts > new Date().getTime() - 10 * 60000).length;
+    const now = Date.now();
+    return uu.filter((x) => x.ts > now - EXPIRATION_TIME).length;
 }
 
 module.exports = {

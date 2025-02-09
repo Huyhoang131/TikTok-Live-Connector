@@ -15,7 +15,7 @@ class TikTokCookieJar {
             return response;
         });
 
-        // Intercept request to append cookies
+        // Intercept requests to append cookies
         this.axiosInstance.interceptors.request.use((request) => {
             this.appendCookies(request);
             return request;
@@ -23,86 +23,57 @@ class TikTokCookieJar {
     }
 
     readCookies(response) {
-        const setCookieHeaders = response.headers['set-cookie'];
+        const setCookieHeaders = response.headers?.['set-cookie'];
 
         if (Array.isArray(setCookieHeaders)) {
-            // Mutiple set-cookie headers
-            setCookieHeaders.forEach((setCookieHeader) => {
-                this.processSetCookieHeader(setCookieHeader);
-            });
+            setCookieHeaders.forEach(this.processSetCookieHeader.bind(this));
         } else if (typeof setCookieHeaders === 'string') {
-            // Single set-cookie header
             this.processSetCookieHeader(setCookieHeaders);
         }
     }
 
     appendCookies(request) {
-        // We use the capitalized 'Cookie' header, because every browser does that
-        if (request.headers['cookie']) {
-            request.headers['Cookie'] = request.headers['cookie'];
-            delete request.headers['cookie'];
-        }
+        const existingCookies = request.headers['cookie'] || request.headers['Cookie'];
 
-        // Cookies already set by custom headers? => Append
-        const headerCookie = request.headers['Cookie'];
-        if (typeof headerCookie === 'string') {
-            Object.assign(this.cookies, this.parseCookie(headerCookie), this.cookies);
+        if (existingCookies) {
+            Object.assign(this.cookies, this.parseCookies(existingCookies));
         }
 
         request.headers['Cookie'] = this.getCookieString();
     }
 
     /**
-     * parse cookies string to object
-     * @param {string} str  multi-cookie string
-     * @returns {Object} parsed cookie object
+     * Parses a cookie string into an object.
+     * @param {string} cookieStr The cookie string.
+     * @returns {Object} Parsed cookies as an object.
      */
-    parseCookie(str) {
-        const cookies = {};
-
-        if (!str) {
-            return cookies;
-        }
-
-        str.split('; ').forEach((v) => {
-            if (!v) {
-                return;
-            }
-
-            const parts = String(v).split('=');
-
-            const cookieName = decodeURIComponent(parts.shift());
-            const cookieValue = parts.join('=');
-
-            cookies[cookieName] = cookieValue;
-        });
-
-        return cookies;
+    parseCookies(cookieStr) {
+        return cookieStr
+            .split('; ')
+            .reduce((acc, cookie) => {
+                const [name, ...valueParts] = cookie.split('=');
+                if (name) acc[decodeURIComponent(name)] = valueParts.join('=');
+                return acc;
+            }, {});
     }
 
     processSetCookieHeader(setCookieHeader) {
-        const nameValuePart = setCookieHeader.split(';')[0];
-        const parts = nameValuePart.split('=');
-        const cookieName = parts.shift();
-        const cookieValue = parts.join('=');
+        const [cookiePart] = setCookieHeader.split(';');
+        const [name, ...valueParts] = cookiePart.split('=');
 
-        if (typeof cookieName === 'string' && cookieName !== '' && typeof cookieValue === 'string') {
-            // this.cookies[decodeURIComponent(cookieName)] = decodeURIComponent(cookieValue);
-            this.cookies[decodeURIComponent(cookieName)] = cookieValue;
+        if (name) {
+            this.cookies[decodeURIComponent(name)] = valueParts.join('=');
         }
     }
 
-    getCookieByName(cookieName) {
-        return this.cookies[cookieName];
+    getCookieByName(name) {
+        return this.cookies[name];
     }
 
     getCookieString() {
-        let cookieString = '';
-        for (const cookieName in this.cookies) {
-            cookieString += encodeURIComponent(cookieName) + '=' + this.cookies[cookieName] + '; ';
-        }
-
-        return cookieString;
+        return Object.entries(this.cookies)
+            .map(([name, value]) => `${encodeURIComponent(name)}=${value}`)
+            .join('; ');
     }
 
     setCookie(name, value) {

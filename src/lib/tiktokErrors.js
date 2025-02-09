@@ -1,13 +1,12 @@
 class ConnectError extends Error {
     constructor(message) {
         super(message);
+        this.name = this.constructor.name;
     }
 }
 
 class InvalidUniqueIdError extends Error {}
-
 class InvalidSessionIdError extends Error {}
-
 class ExtractRoomIdError extends Error {}
 
 class InvalidResponseError extends Error {
@@ -18,12 +17,7 @@ class InvalidResponseError extends Error {
     }
 }
 
-class SignatureError extends InvalidResponseError {
-    constructor(message, requestErr = undefined) {
-        super(message, requestErr);
-        this.name = 'SignatureError';
-    }
-}
+class SignatureError extends InvalidResponseError {}
 
 class InitialFetchError extends ConnectError {
     constructor(message, retryAfter) {
@@ -33,22 +27,21 @@ class InitialFetchError extends ConnectError {
 }
 
 class AlreadyConnectingError extends ConnectError {}
-
 class AlreadyConnectedError extends ConnectError {}
-
 class UserOfflineError extends ConnectError {}
-
 class NoWSUpgradeError extends ConnectError {}
 
+// Export errors in a cleaner way
 module.exports = {
+    ConnectError,
+    InvalidUniqueIdError,
+    InvalidSessionIdError,
+    ExtractRoomIdError,
+    InvalidResponseError,
+    SignatureError,
     InitialFetchError,
     AlreadyConnectingError,
     AlreadyConnectedError,
     UserOfflineError,
-    InvalidUniqueIdError,
     NoWSUpgradeError,
-    InvalidSessionIdError,
-    InvalidResponseError,
-    ExtractRoomIdError,
-    SignatureError,
 };

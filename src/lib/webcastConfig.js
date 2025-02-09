@@ -1,7 +1,12 @@
-module.exports = {
-    TIKTOK_URL_WEB: 'https://www.tiktok.com/',
+const REFERER_URL = 'https://www.tiktok.com/';
+
+module.exports = Object.freeze({
+    // Base URLs
+    TIKTOK_URL_WEB: REFERER_URL,
     TIKTOK_URL_WEBCAST: 'https://webcast.tiktok.com/webcast/',
-    TIKTOK_HTTP_ORIGIN: 'https://www.tiktok.com',
+    TIKTOK_HTTP_ORIGIN: REFERER_URL,
+
+    // Default Client Parameters
     DEFAULT_CLIENT_PARAMS: {
         aid: 1988,
         app_language: 'en-US',
@@ -10,7 +15,7 @@ module.exports = {
         browser_name: 'Mozilla',
         browser_online: true,
         browser_platform: 'Win32',
-        browser_version: '5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36',
+        browser_version: '5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         cookie_enabled: true,
         cursor: '',
         internal_ext: '',
@@ -28,21 +33,25 @@ module.exports = {
         screen_height: 1152,
         screen_width: 2048,
         tz_name: 'Europe/Berlin',
-        referer: 'https://www.tiktok.com/',
-        root_referer: 'https://www.tiktok.com/',
+        referer: REFERER_URL,
+        root_referer: REFERER_URL,
         host: 'https://webcast.tiktok.com',
         webcast_sdk_version: '1.3.0',
-        update_version_code: '1.3.0'
+        update_version_code: '1.3.0',
     },
+
+    // Default Request Headers
     DEFAULT_REQUEST_HEADERS: {
         Connection: 'keep-alive',
         'Cache-Control': 'max-age=0',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         Accept: 'text/html,application/json,application/protobuf',
-        Referer: 'https://www.tiktok.com/',
-        Origin: 'https://www.tiktok.com',
+        Referer: REFERER_URL,
+        Origin: REFERER_URL,
         'Accept-Language': 'en-US,en;q=0.9',
         'Accept-Encoding': 'gzip, deflate',
     },
+
+    // Webcast Version Code
     WEBCAST_VERSION_CODE: '180800',
-};
+});
