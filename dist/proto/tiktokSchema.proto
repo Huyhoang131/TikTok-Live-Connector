@@ -1,0 +1,288 @@
+syntax = "proto3";
+package TikTok;
+
+// ========== CORE WEBCAST RESPONSE ==========
+
+message WebcastResponse {
+  repeated Message messages = 1;
+  string cursor = 2;
+  int32 fetchInterval = 3;
+  int64 serverTimestamp = 4;
+  string internalExt = 5;
+  int32 fetchType = 6; // WebSocket (1) or polling (2)
+  repeated WebsocketParam wsParams = 7;
+  int32 heartbeatDuration = 8;
+  bool needAck = 9;
+  string wsUrl = 10;
+}
+
+message Message {
+  string type = 1;
+  bytes binary = 2;
+}
+
+message WebsocketParam {
+  string name = 1;
+  string value = 2;
+}
+
+// ========== CHAT & USER MESSAGES ==========
+
+message WebcastChatMessage {
+  WebcastMessageEvent event = 1;
+  User user = 2;
+  string comment = 3;
+  repeated WebcastSubEmote emotes = 13;
+}
+
+message WebcastEmoteChatMessage {
+  User user = 2;
+  EmoteDetails emote = 3;
+}
+
+message WebcastSubEmote {
+  int32 placeInComment = 1; // Emote position in comment
+  EmoteDetails emote = 2;
+}
+
+// ========== GIFTS & DONATIONS ==========
+
+message WebcastGiftMessage {
+  WebcastMessageEvent event = 1;
+  int32 giftId = 2;
+  int32 repeatCount = 5;
+  User user = 7;
+  int32 repeatEnd = 9;
+  uint64 groupId = 11;
+  WebcastGiftMessageGiftDetails giftDetails = 15;
+  string monitorExtra = 22;
+  WebcastGiftMessageGiftExtra giftExtra = 23;
+}
+
+message WebcastGiftMessageGiftDetails {
+  WebcastGiftMessageGiftImage giftImage = 1;
+  string giftName = 16;
+  string describe = 2;
+  int32 giftType = 11;
+  int32 diamondCount = 12;
+}
+
+message WebcastGiftMessageGiftExtra {
+  uint64 timestamp = 6;
+  uint64 receiverUserId = 8;
+}
+
+message WebcastGiftMessageGiftImage {
+  string giftPictureUrl = 1;
+}
+
+// ========== LIVE STREAM STATISTICS ==========
+
+message WebcastRoomUserSeqMessage {
+  repeated TopUser topViewers = 2;
+  int32 viewerCount = 3;
+}
+
+message TopUser {
+  uint64 coinCount = 1;
+  User user = 2;
+}
+
+// ========== BATTLES & COMPETITIONS ==========
+
+message WebcastLinkMicBattle {
+  repeated WebcastLinkMicBattleItems battleUsers = 10;
+}
+
+message WebcastLinkMicBattleItems {
+  WebcastLinkMicBattleGroup battleGroup = 2;
+}
+
+message WebcastLinkMicBattleGroup {
+  LinkUser user = 1;
+}
+
+message WebcastLinkMicArmies {
+  repeated WebcastLinkMicArmiesItems battleItems = 3;
+  int32 battleStatus = 7;
+}
+
+message WebcastLinkMicArmiesItems {
+  uint64 hostUserId = 1;
+  repeated WebcastLinkMicArmiesGroup battleGroups = 2;
+}
+
+message WebcastLinkMicArmiesGroup {
+  repeated User users = 1;
+  int32 points = 2;
+}
+
+// ========== SOCIAL INTERACTIONS ==========
+
+message WebcastSocialMessage {
+  WebcastMessageEvent event = 1;
+  User user = 2;
+}
+
+message WebcastLikeMessage {
+  WebcastMessageEvent event = 1;
+  User user = 5;
+  int32 likeCount = 2;
+  int32 totalLikeCount = 3;
+}
+
+message WebcastQuestionNewMessage {
+  QuestionDetails questionDetails = 2;
+}
+
+message QuestionDetails {
+  string questionText = 2;
+  User user = 5;
+}
+
+// ========== UI & SYSTEM MESSAGES ==========
+
+message WebcastLiveIntroMessage {
+  uint64 id = 2;
+  string description = 4;
+  User user = 5;
+}
+
+message SystemMessage {
+  string description = 2;
+}
+
+message WebcastInRoomBannerMessage {
+  string data = 2;
+}
+
+message WebcastHourlyRankMessage {
+  RankContainer data = 2;
+}
+
+message RankContainer {
+  WeeklyRanking rankings = 4;
+}
+
+message WeeklyRanking {
+  string type = 1;
+  string label = 2;
+  RankItem rank = 3;
+}
+
+message RankItem {
+  string colour = 1;
+  uint64 id = 4;
+}
+
+// ========== TREASURE BOX (ENVELOPE) MESSAGES ==========
+
+message WebcastEnvelopeMessage {
+  TreasureBoxData treasureBoxData = 2;
+  TreasureBoxUser treasureBoxUser = 1;
+}
+
+message TreasureBoxUser {
+  TreasureBoxUser2 user2 = 8;
+}
+
+message TreasureBoxUser2 {
+  repeated TreasureBoxUser3 user3 = 4;
+}
+
+message TreasureBoxUser3 {
+  TreasureBoxUser4 user4 = 21;
+}
+
+message TreasureBoxUser4 {
+  User user = 1;
+}
+
+message TreasureBoxData {
+  uint32 coins = 5;
+  uint32 canOpen = 6;
+  uint64 timestamp = 7;
+}
+
+// ========== SUBSCRIPTION NOTIFICATIONS ==========
+
+message WebcastSubNotifyMessage {
+  WebcastMessageEvent event = 1;
+  User user = 2;
+  int32 exhibitionType = 3;
+  int32 subMonth = 4;
+  int32 subscribeType = 5;
+  int32 oldSubscribeStatus = 6;
+  int32 subscribingStatus = 8;
+}
+
+// ========== GENERIC STRUCTURES ==========
+
+message User {
+  uint64 userId = 1;
+  string nickname = 3;
+  ProfilePicture profilePicture = 9;
+  string uniqueId = 38;
+  string secUid = 46;
+  repeated UserBadgesAttributes badges = 64;
+  uint64 createTime = 16;
+  string bioDescription = 5;
+  FollowInfo followInfo = 22;
+}
+
+message FollowInfo {
+  int32 followingCount = 1;
+  int32 followerCount = 2;
+  int32 followStatus = 3;
+  int32 pushStatus = 4;
+}
+
+message LinkUser {
+  uint64 userId = 1;
+  string nickname = 2;
+  ProfilePicture profilePicture = 3;
+  string uniqueId = 4;
+}
+
+message ProfilePicture {
+  repeated string urls = 1;
+}
+
+message UserBadgesAttributes {
+  int32 badgeSceneType = 3;
+  repeated UserImageBadge imageBadges = 20;
+  repeated UserBadge badges = 21;
+  PrivilegeLogExtra privilegeLogExtra = 12;
+}
+
+message PrivilegeLogExtra {
+  string privilegeId = 2;
+  string level = 5;
+}
+
+message UserBadge {
+  string type = 2;
+  string name = 3;
+}
+
+message UserImageBadge {
+  int32 displayType = 1;
+  UserImageBadgeImage image = 2;
+}
+
+message UserImageBadgeImage {
+  string url = 1;
+}
+
+// ========== WEBSOCKET MESSAGES ==========
+
+message WebcastWebsocketMessage {
+  uint64 id = 2;
+  string type = 7;
+  bytes binary = 8;
+}
+
+message WebcastWebsocketAck {
+  uint64 id = 2;
+  string type = 7;
+}

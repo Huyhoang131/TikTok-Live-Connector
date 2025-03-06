@@ -113,13 +113,13 @@ class WebcastPushConnection extends EventEmitter {
                 this.#roomId = roomId;
                 this.#clientParams.room_id = roomId;
             } else {
-                await this.#retrieveRoomId();
+                await this.retrieveRoomId();
             }
 
-            if (this.#options.fetchRoomInfoOnConnect) await this.#fetchRoomInfo();
+            if (this.#options.fetchRoomInfoOnConnect) await this.fetchRoomInfo();
             if (this.#roomInfo?.status === 4) throw new UserOfflineError('LIVE has ended');
-            if (this.#options.enableExtendedGiftInfo) await this.#fetchAvailableGifts();
-            await this.#fetchRoomData(true);
+            if (this.#options.enableExtendedGiftInfo) await this.fetchAvailableGifts();
+            await this.fetchRoomData(true);
 
             if (!this.#isWsUpgradeDone) {
                 if (!this.#options.enableRequestPolling) {
@@ -128,7 +128,7 @@ class WebcastPushConnection extends EventEmitter {
                 if (!this.#options.sessionId) {
                     throw new NoWSUpgradeError('TikTok does not offer a WebSocket upgrade. Please provide a valid `sessionId`.');
                 }
-                this.#startFetchRoomPolling();
+                this.startFetchRoomPolling();
             }
 
             this.#isConnected = true;
@@ -155,8 +155,8 @@ class WebcastPushConnection extends EventEmitter {
     }
 
     async getRoomInfo() {
-        if (!this.#isConnected) await this.#retrieveRoomId();
-        await this.#fetchRoomInfo();
+        if (!this.#isConnected) await this.retrieveRoomId();
+        await this.fetchRoomInfo();
         return this.#roomInfo;
     }
 
